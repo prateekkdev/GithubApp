@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">GithubApp</string>
+    <string name="comments_no_text">No comments</string>
+    <string name="dialog_title">Comments displayed here</string>
+    <string name="author_title">Author:</string>
+    <string name="comment_title">Comment:</string>
+    <string name="action_refresh">Refresh</string>
+</resources>
