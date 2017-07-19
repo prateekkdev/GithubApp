@@ -38,7 +38,6 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
 
     @Override
     public void fetchIssuesList() {
-
         Log.e("Prateek", "presenter, githubservice: " + githubService.toString());
         crashlyticsModelObservable = githubService.listIssues().subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
