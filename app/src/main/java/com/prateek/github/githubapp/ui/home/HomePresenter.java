@@ -29,7 +29,7 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
 
     GithubService githubService;
 
-    private Observable<ArrayList<CrashlyticsDto>> crashlyticsModelObservable;
+    private Observable<ArrayList<CrashlyticsDto>> sortedCrashlyticsIssuesObservable;
 
     private LruCache<String, String> commentsCache;
     private static final int COMMENTS_CACHE_SIZE = 10;
@@ -42,17 +42,27 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
         commentsCache = new LruCache<>(COMMENTS_CACHE_SIZE);
     }
 
+    private Observable<ArrayList<CrashlyticsDto>> getSortedCrashlyticsIssuesObservable() {
+        if (sortedCrashlyticsIssuesObservable == null) {
+            sortedCrashlyticsIssuesObservable = githubService.listIssues().subscribeOn(Schedulers.io())
+                    .map(list -> {
+                        Collections.sort(list);
+                        return list;
+                    })
+                    .observeOn(AndroidSchedulers.mainThread());
+        }
+
+        return sortedCrashlyticsIssuesObservable;
+    }
+
+
     @Override
     public void fetchIssuesList() {
         Log.e("Prateek", "presenter, githubservice: " + githubService.toString());
-        crashlyticsModelObservable = githubService.listIssues().subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .map(list -> {
-                    Collections.sort(list);
-                    return list;
-                });
 
-        crashlyticsModelObservable
+        // TODO Observable should be disposed when presenter not goes out or else might leak for a little while until request is running and then might throw IllegalStateException
+        // TODO But would do for elaboration.
+        getSortedCrashlyticsIssuesObservable()
                 .subscribe(new Observer<ArrayList<CrashlyticsDto>>() {
                     @Override
                     public void onSubscribe(Disposable d) {
@@ -90,6 +100,8 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
             return;
         }
 
+        // TODO Observable should be disposed when presenter goes out or else might leak for a little while until request is running and then might throw IllegalStateException
+        // TODO But would do for elaboration.
         githubService.listComments(commentsUrl)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -128,6 +140,7 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
 
                     @Override
                     public void onError(Throwable e) {
+                        mainView.stopProgress();
                         mainView.showError();
                     }
 
