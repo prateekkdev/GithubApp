@@ -2,6 +2,7 @@ package com.prateek.github.githubapp.ui.home;
 
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.LruCache;
 
 import com.prateek.github.githubapp.R;
 import com.prateek.github.githubapp.application.PApp;
@@ -30,10 +31,15 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
 
     private Observable<ArrayList<CrashlyticsDto>> crashlyticsModelObservable;
 
+    private LruCache<String, String> commentsCache;
+    private static final int COMMENTS_CACHE_SIZE = 10;
+
     public HomePresenter(IHomeContract.IMainView mainView) {
         this.mainView = mainView;
 
         githubService = PApp.getApp().githubService();
+
+        commentsCache = new LruCache<>(COMMENTS_CACHE_SIZE);
     }
 
     @Override
@@ -76,6 +82,14 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
     @Override
     public void fetchComments(String commentsUrl) {
         Log.e("Prateek", "adapter, githubservice: " + githubService.toString());
+
+        String commentCacheString = commentsCache.get(commentsUrl);
+
+        if (!TextUtils.isEmpty(commentCacheString)) {
+            mainView.showCommentsDialog(commentCacheString);
+            return;
+        }
+
         githubService.listComments(commentsUrl)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -87,7 +101,6 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
 
                     @Override
                     public void onNext(ArrayList<CommentsDto> commentsDtos) {
-                        mainView.stopProgress();
 
                         StringBuilder comments = new StringBuilder("");
 
@@ -102,7 +115,13 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
 
                         if (TextUtils.isEmpty(comments)) {
                             comments.append(PApp.getApp().getResources().getString(R.string.comments_no_text));
+                        } else {
+
+                            // If network gives comments, then only put it to cache.
+                            commentsCache.put(commentsUrl, comments.toString());
                         }
+
+                        mainView.stopProgress();
 
                         mainView.showCommentsDialog(comments.toString());
                     }
