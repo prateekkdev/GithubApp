@@ -14,9 +14,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import io.reactivex.Observable;
-import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -30,6 +29,8 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
     GithubService githubService;
 
     private Observable<ArrayList<CrashlyticsDto>> sortedCrashlyticsIssuesObservable;
+
+    private CompositeDisposable disposableList = new CompositeDisposable();
 
     private LruCache<String, String> commentsCache;
     private static final int COMMENTS_CACHE_SIZE = 10;
@@ -60,33 +61,23 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
     public void fetchIssuesList() {
         Log.e("Prateek", "presenter, githubservice: " + githubService.toString());
 
-        // TODO Observable should be disposed when presenter not goes out or else might leak for a little while until request is running and then might throw IllegalStateException
-        // TODO But would do for elaboration.
-        getSortedCrashlyticsIssuesObservable()
-                .subscribe(new Observer<ArrayList<CrashlyticsDto>>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        mainView.startProgress();
-                    }
+        disposableList.add(getSortedCrashlyticsIssuesObservable()
+                .doOnSubscribe(disposable -> mainView.startProgress())
+                .doOnError(error -> {
+                            mainView.stopProgress();
+                            mainView.showError();
+                        }
+                ).doOnNext(crashlyticsModelList -> {
+                    mainView.stopProgress();
+                    mainView.updateIssuesList(crashlyticsModelList);
 
-                    @Override
-                    public void onNext(ArrayList<CrashlyticsDto> crashlyticsModelList) {
-                        mainView.stopProgress();
-                        mainView.updateIssuesList(crashlyticsModelList);
-                    }
+                }).subscribe());
+    }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        mainView.stopProgress();
-                        mainView.showError();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        // Not required
-                    }
-                });
-
+    @Override
+    public void onStopCalled() {
+        disposableList.dispose();
+        mainView.stopProgress();
     }
 
     @Override
@@ -100,54 +91,38 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
             return;
         }
 
-        // TODO Observable should be disposed when presenter goes out or else might leak for a little while until request is running and then might throw IllegalStateException
-        // TODO But would do for elaboration.
-        githubService.listComments(commentsUrl)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<ArrayList<CommentsDto>>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        mainView.startProgress();
-                    }
+        disposableList.add(
+                githubService.listComments(commentsUrl)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnSubscribe(disposable -> mainView.startProgress())
+                        .doOnNext(commentsDtos -> {
+                            StringBuilder comments = new StringBuilder("");
 
-                    @Override
-                    public void onNext(ArrayList<CommentsDto> commentsDtos) {
+                            for (CommentsDto commentsDto : commentsDtos) {
 
-                        StringBuilder comments = new StringBuilder("");
+                                if (commentsDto.getUserDto() != null) {
+                                    comments.append("\n" + PApp.getApp().getResources().getString(R.string.author_title) + " " + commentsDto.getUserDto().getLogin());
+                                }
 
-                        for (CommentsDto commentsDto : commentsDtos) {
-
-                            if (commentsDto.getUserDto() != null) {
-                                comments.append("\n" + PApp.getApp().getResources().getString(R.string.author_title) + " " + commentsDto.getUserDto().getLogin());
+                                comments.append("\n" + PApp.getApp().getResources().getString(R.string.comment_title) + " " + commentsDto.getBody());
                             }
 
-                            comments.append("\n" + PApp.getApp().getResources().getString(R.string.comment_title) + " " + commentsDto.getBody());
-                        }
+                            if (TextUtils.isEmpty(comments)) {
+                                comments.append(PApp.getApp().getResources().getString(R.string.comments_no_text));
+                            } else {
 
-                        if (TextUtils.isEmpty(comments)) {
-                            comments.append(PApp.getApp().getResources().getString(R.string.comments_no_text));
-                        } else {
+                                // If network gives comments, then only put it to cache.
+                                commentsCache.put(commentsUrl, comments.toString());
+                            }
 
-                            // If network gives comments, then only put it to cache.
-                            commentsCache.put(commentsUrl, comments.toString());
-                        }
+                            mainView.stopProgress();
 
-                        mainView.stopProgress();
-
-                        mainView.showCommentsDialog(comments.toString());
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        mainView.stopProgress();
-                        mainView.showError();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        // Not required
-                    }
-                });
+                            mainView.showCommentsDialog(comments.toString());
+                        })
+                        .doOnError(error -> {
+                            mainView.stopProgress();
+                            mainView.showError();
+                        }).subscribe());
     }
 }

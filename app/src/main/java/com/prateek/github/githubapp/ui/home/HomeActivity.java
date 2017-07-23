@@ -47,6 +47,12 @@ public class HomeActivity extends AppCompatActivity implements IHomeContract.IMa
     }
 
     @Override
+    protected void onStop() {
+        homePresenter.onStopCalled();
+        super.onStop();
+    }
+
+    @Override
     public void startProgress() {
         mainBinding.mainProgress.setVisibility(View.VISIBLE);
     }

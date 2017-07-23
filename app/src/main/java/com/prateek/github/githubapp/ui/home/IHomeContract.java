@@ -26,5 +26,7 @@ public interface IHomeContract {
         void fetchIssuesList();
 
         void fetchComments(String commentsUrl);
+
+        void onStopCalled();
     }
 }
