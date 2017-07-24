@@ -27,7 +27,7 @@ public class HomeModule {
 
     @Provides
     @HomeScope
-    HomePresenter presenter() {
+    IHomeContract.IMainPresenter presenter() {
         return new HomePresenter(homeActivity);
     }
 

@@ -29,7 +29,7 @@ public class HomeActivity extends AppCompatActivity implements IHomeContract.IMa
     HomeAdapter issuesListAdapter;
 
     @Inject
-    HomePresenter homePresenter;
+    IHomeContract.IMainPresenter homePresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

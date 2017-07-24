@@ -10,6 +10,4 @@ import dagger.Component;
 @HomeScope
 public interface HomeComponent {
     void inject(HomeActivity homeActivity);
-
-    // void inject(HomeAdapter homeAdapter);
 }
