@@ -9,5 +9,7 @@ import dagger.Component;
 @Component(modules = {HomeModule.class})
 @HomeScope
 public interface HomeComponent {
-    void inject(HomeActivity homeActivity);
+    void inject(IHomeContract.IHomeView homeActivity);
+
+    void inject(IHomeContract.IHomePresenter homePresenter);
 }

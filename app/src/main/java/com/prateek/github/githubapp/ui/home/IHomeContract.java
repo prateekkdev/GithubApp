@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 public interface IHomeContract {
 
-    interface IMainView {
+    interface IHomeView {
         void updateIssuesList(ArrayList<CrashlyticsDto> crashlyticsDtoArrayList);
 
         void startProgress();
@@ -22,7 +22,7 @@ public interface IHomeContract {
         void showCommentsDialog(String body);
     }
 
-    interface IMainPresenter {
+    interface IHomePresenter {
         void fetchIssuesList();
 
         void fetchComments(String commentsUrl);

@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 import javax.inject.Inject;
 
-public class HomeActivity extends AppCompatActivity implements IHomeContract.IMainView {
+public class HomeActivity extends AppCompatActivity implements IHomeContract.IHomeView {
 
     private ActivityMainBinding mainBinding;
 
@@ -29,7 +29,7 @@ public class HomeActivity extends AppCompatActivity implements IHomeContract.IMa
     HomeAdapter issuesListAdapter;
 
     @Inject
-    IHomeContract.IMainPresenter homePresenter;
+    IHomeContract.IHomePresenter homePresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

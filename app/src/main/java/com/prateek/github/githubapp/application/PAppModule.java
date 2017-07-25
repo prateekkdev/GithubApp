@@ -1,8 +1,14 @@
 package com.prateek.github.githubapp.application;
 
+import android.content.Context;
+import android.util.LruCache;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.prateek.github.githubapp.network.GithubService;
+import com.prateek.github.githubapp.ui.home.HomeScope;
+
+import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
@@ -19,14 +25,20 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @Module
 public class PAppModule {
 
+    private Context appContext;
+
+    public PAppModule(Context app) {
+        appContext = app.getApplicationContext();
+    }
+
     @Provides
-    @PAppScope
+    @Singleton
     public GithubService githubService(Retrofit retrofit) {
         return retrofit.create(GithubService.class);
     }
 
     @Provides
-    @PAppScope
+    @Singleton
     public Retrofit retrofit(OkHttpClient okHttpClient, Gson gson) {
         return new Retrofit.Builder()
                 .baseUrl(GithubService.SERVICE_ENDPOINT)
@@ -37,7 +49,7 @@ public class PAppModule {
     }
 
     @Provides
-    @PAppScope
+    @Singleton
     public OkHttpClient okHttpClient(HttpLoggingInterceptor loggingInterceptor) {
         return new OkHttpClient.Builder()
                 .addInterceptor(loggingInterceptor)
@@ -45,7 +57,7 @@ public class PAppModule {
     }
 
     @Provides
-    @PAppScope
+    @Singleton
     public HttpLoggingInterceptor httpLoggingInterceptor() {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -53,8 +65,20 @@ public class PAppModule {
     }
 
     @Provides
-    @PAppScope
+    @Singleton
     public Gson gson() {
         return new GsonBuilder().create();
+    }
+
+    @Provides
+    @Singleton
+    public Context context() {
+        return appContext;
+    }
+
+    @Provides
+    @Singleton
+    LruCache<String, String> cache() {
+        return new LruCache<>(10);
     }
 }

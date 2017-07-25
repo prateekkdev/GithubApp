@@ -1,5 +1,6 @@
 package com.prateek.github.githubapp.ui.home;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.LruCache;
@@ -13,6 +14,8 @@ import com.prateek.github.githubapp.network.dto.CrashlyticsDto;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import javax.inject.Inject;
+
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -22,25 +25,28 @@ import io.reactivex.schedulers.Schedulers;
  * Created by prateek.kesarwani on 18/07/17.
  */
 
-public class HomePresenter implements IHomeContract.IMainPresenter {
+public class HomePresenter implements IHomeContract.IHomePresenter {
 
-    private IHomeContract.IMainView mainView;
+    private IHomeContract.IHomeView mainView;
 
-    GithubService githubService;
+    @Inject
+    public GithubService githubService;
+
+    @Inject
+    public LruCache<String, String> commentsCache;
+
+    @Inject
+    public Context appContext;
 
     private Observable<ArrayList<CrashlyticsDto>> sortedCrashlyticsIssuesObservable;
 
     private CompositeDisposable disposableList = new CompositeDisposable();
 
-    private LruCache<String, String> commentsCache;
-    private static final int COMMENTS_CACHE_SIZE = 10;
-
-    public HomePresenter(IHomeContract.IMainView mainView) {
+    public HomePresenter(IHomeContract.IHomeView mainView) {
         this.mainView = mainView;
 
-        githubService = PApp.getApp().githubService();
-
-        commentsCache = new LruCache<>(COMMENTS_CACHE_SIZE);
+        PApp.getAppComponent().inject(this);
+        DaggerHomeComponent.builder().build().inject(this);
     }
 
     private Observable<ArrayList<CrashlyticsDto>> getSortedCrashlyticsIssuesObservable() {
@@ -102,14 +108,14 @@ public class HomePresenter implements IHomeContract.IMainPresenter {
                             for (CommentsDto commentsDto : commentsDtos) {
 
                                 if (commentsDto.getUserDto() != null) {
-                                    comments.append("\n" + PApp.getApp().getResources().getString(R.string.author_title) + " " + commentsDto.getUserDto().getLogin());
+                                    comments.append("\n" + appContext.getResources().getString(R.string.author_title) + " " + commentsDto.getUserDto().getLogin());
                                 }
 
-                                comments.append("\n" + PApp.getApp().getResources().getString(R.string.comment_title) + " " + commentsDto.getBody());
+                                comments.append("\n" + appContext.getResources().getString(R.string.comment_title) + " " + commentsDto.getBody());
                             }
 
                             if (TextUtils.isEmpty(comments)) {
-                                comments.append(PApp.getApp().getResources().getString(R.string.comments_no_text));
+                                comments.append(appContext.getResources().getString(R.string.comments_no_text));
                             } else {
 
                                 // If network gives comments, then only put it to cache.

@@ -1,7 +1,6 @@
 package com.prateek.github.githubapp.ui.home;
 
-import com.prateek.github.githubapp.application.PApp;
-import com.prateek.github.githubapp.network.GithubService;
+import android.util.LruCache;
 
 import dagger.Module;
 import dagger.Provides;
@@ -12,6 +11,8 @@ import dagger.Provides;
 
 @Module
 public class HomeModule {
+
+    private static final int COMMENTS_CACHE_SIZE = 10;
 
     private HomeActivity homeActivity;
 
@@ -27,13 +28,9 @@ public class HomeModule {
 
     @Provides
     @HomeScope
-    IHomeContract.IMainPresenter presenter() {
+    IHomeContract.IHomePresenter presenter() {
         return new HomePresenter(homeActivity);
     }
 
-    @Provides
-    GithubService service() {
-        // This seems like an hack, should be some other way.
-        return PApp.getApp().githubService();
-    }
+
 }
